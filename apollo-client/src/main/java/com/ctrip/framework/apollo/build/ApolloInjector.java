@@ -6,17 +6,31 @@ import com.ctrip.framework.apollo.tracer.Tracer;
 import com.ctrip.framework.foundation.internals.ServiceBootstrap;
 
 /**
+ * Apollo 注入器，实现依赖注入
  * @author Jason Song(song_s@ctrip.com)
  */
 public class ApolloInjector {
+
+  /**
+   * 真正的注入器对象
+   */
   private static volatile Injector s_injector;
   private static final Object lock = new Object();
 
+  /**
+   * 创建bean的入口
+   * @return
+   */
   private static Injector getInjector() {
+
     if (s_injector == null) {
+
       synchronized (lock) {
+
         if (s_injector == null) {
+
           try {
+            // 基于 JDK SPI 加载对应的 Injector 实现对象
             s_injector = ServiceBootstrap.loadFirst(Injector.class);
           } catch (Throwable ex) {
             ApolloConfigException exception = new ApolloConfigException("Unable to initialize Apollo Injector!", ex);

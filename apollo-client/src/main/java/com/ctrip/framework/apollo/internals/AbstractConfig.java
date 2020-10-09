@@ -23,28 +23,37 @@ import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * 实现 Config 接口，Config 抽象类，实现了
+ * 1）缓存读取属性值、2）异步通知监听器、3）计算属性变化等等特性
  * @author Jason Song(song_s@ctrip.com)
  */
 public abstract class AbstractConfig implements Config {
+
   private static final Logger logger = LoggerFactory.getLogger(AbstractConfig.class);
 
+  /**
+   * ExecutorService 对象，用于配置变化时，异步通知 ConfigChangeListener 监听器们
+   *
+   * 静态属性，所有 Config 共享该线程池。
+   */
   private static final ExecutorService m_executorService;
 
+  /**
+   * ConfigChangeListener，监听器集合
+   */
   private final List<ConfigChangeListener> m_listeners = Lists.newCopyOnWriteArrayList();
+
   private final Map<ConfigChangeListener, Set<String>> m_interestedKeys = Maps.newConcurrentMap();
   private final Map<ConfigChangeListener, Set<String>> m_interestedKeyPrefixes = Maps.newConcurrentMap();
+
   private final ConfigUtil m_configUtil;
+
   private volatile Cache<String, Integer> m_integerCache;
   private volatile Cache<String, Long> m_longCache;
   private volatile Cache<String, Short> m_shortCache;
@@ -54,8 +63,13 @@ public abstract class AbstractConfig implements Config {
   private volatile Cache<String, Boolean> m_booleanCache;
   private volatile Cache<String, Date> m_dateCache;
   private volatile Cache<String, Long> m_durationCache;
+
   private final Map<String, Cache<String, String[]>> m_arrayCache;
   private final List<Cache> allCaches;
+
+  /**
+   * 缓存版本号，用于解决更新缓存可能存在的并发问题。详细见 {@link #getValueAndStoreToCache(String, Function, Cache, Object)} 方法
+   */
   private final AtomicLong m_configVersion; //indicate config version
 
   static {
@@ -82,14 +96,19 @@ public abstract class AbstractConfig implements Config {
 
   @Override
   public void addChangeListener(ConfigChangeListener listener, Set<String> interestedKeys, Set<String> interestedKeyPrefixes) {
+
     if (!m_listeners.contains(listener)) {
+
       m_listeners.add(listener);
+
       if (interestedKeys != null && !interestedKeys.isEmpty()) {
         m_interestedKeys.put(listener, Sets.newHashSet(interestedKeys));
       }
+
       if (interestedKeyPrefixes != null && !interestedKeyPrefixes.isEmpty()) {
         m_interestedKeyPrefixes.put(listener, Sets.newHashSet(interestedKeyPrefixes));
       }
+
     }
   }
 
@@ -381,6 +400,15 @@ public abstract class AbstractConfig implements Config {
     return defaultValue;
   }
 
+  /**
+   *
+   * @param key
+   * @param parser
+   * @param cache
+   * @param defaultValue
+   * @param <T>
+   * @return
+   */
   private <T> T getValueFromCache(String key, Function<String, T> parser, Cache<String, T> cache, T defaultValue) {
     T result = cache.getIfPresent(key);
 
@@ -421,6 +449,7 @@ public abstract class AbstractConfig implements Config {
   }
 
   /**
+   * synchronized ，用于和 #getValueAndStoreToCache(...) 方法，在更新缓存时的互斥，避免并发。
    * Clear config cache
    */
   protected void clearConfigCache() {
@@ -434,12 +463,20 @@ public abstract class AbstractConfig implements Config {
     }
   }
 
+  /**
+   * 异步触发监听器
+   *
+   * @param changeEvent
+   */
   protected void fireConfigChange(final ConfigChangeEvent changeEvent) {
+
     for (final ConfigChangeListener listener : m_listeners) {
+
       // check whether the listener is interested in this change event
       if (!isConfigChangeListenerInterested(listener, changeEvent)) {
         continue;
       }
+
       m_executorService.submit(new Runnable() {
         @Override
         public void run() {
@@ -490,6 +527,13 @@ public abstract class AbstractConfig implements Config {
     return false;
   }
 
+  /**
+   * 计算配置变更集合
+   * @param namespace
+   * @param previous
+   * @param current
+   * @return
+   */
   List<ConfigChange> calcPropertyChanges(String namespace, Properties previous,
                                          Properties current) {
     if (previous == null) {
@@ -503,8 +547,11 @@ public abstract class AbstractConfig implements Config {
     Set<String> previousKeys = previous.stringPropertyNames();
     Set<String> currentKeys = current.stringPropertyNames();
 
+    //交集
     Set<String> commonKeys = Sets.intersection(previousKeys, currentKeys);
+    //新增
     Set<String> newKeys = Sets.difference(currentKeys, commonKeys);
+    //移除
     Set<String> removedKeys = Sets.difference(previousKeys, commonKeys);
 
     List<ConfigChange> changes = Lists.newArrayList();

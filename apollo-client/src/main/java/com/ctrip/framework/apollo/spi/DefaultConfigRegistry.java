@@ -8,9 +8,11 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 /**
+ * Config 注册表接口。其中，KEY 为 Namespace 的名字，VALUE 为 ConfigFactory 对象
  * @author Jason Song(song_s@ctrip.com)
  */
 public class DefaultConfigRegistry implements ConfigRegistry {
+
   private static final Logger s_logger = LoggerFactory.getLogger(DefaultConfigRegistry.class);
   private Map<String, ConfigFactory> m_instances = Maps.newConcurrentMap();
 

@@ -9,6 +9,7 @@ import com.google.common.collect.Maps;
  * @author Jason Song(song_s@ctrip.com)
  */
 public class DefaultConfigFactoryManager implements ConfigFactoryManager {
+
   private ConfigRegistry m_registry;
 
   private Map<String, ConfigFactory> m_factories = Maps.newConcurrentMap();
@@ -19,6 +20,7 @@ public class DefaultConfigFactoryManager implements ConfigFactoryManager {
 
   @Override
   public ConfigFactory getFactory(String namespace) {
+
     // step 1: check hacked factory
     ConfigFactory factory = m_registry.getFactory(namespace);
 

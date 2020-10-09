@@ -1,31 +1,21 @@
 package com.ctrip.framework.apollo.spi;
 
-import com.ctrip.framework.apollo.ConfigService;
-import com.ctrip.framework.apollo.PropertiesCompatibleConfigFile;
-import com.ctrip.framework.apollo.internals.PropertiesCompatibleFileConfigRepository;
-import com.ctrip.framework.apollo.internals.TxtConfigFile;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.ctrip.framework.apollo.Config;
 import com.ctrip.framework.apollo.ConfigFile;
+import com.ctrip.framework.apollo.ConfigService;
+import com.ctrip.framework.apollo.PropertiesCompatibleConfigFile;
 import com.ctrip.framework.apollo.build.ApolloInjector;
 import com.ctrip.framework.apollo.core.enums.ConfigFileFormat;
-import com.ctrip.framework.apollo.internals.ConfigRepository;
-import com.ctrip.framework.apollo.internals.DefaultConfig;
-import com.ctrip.framework.apollo.internals.JsonConfigFile;
-import com.ctrip.framework.apollo.internals.LocalFileConfigRepository;
-import com.ctrip.framework.apollo.internals.PropertiesConfigFile;
-import com.ctrip.framework.apollo.internals.RemoteConfigRepository;
-import com.ctrip.framework.apollo.internals.XmlConfigFile;
-import com.ctrip.framework.apollo.internals.YamlConfigFile;
-import com.ctrip.framework.apollo.internals.YmlConfigFile;
+import com.ctrip.framework.apollo.internals.*;
 import com.ctrip.framework.apollo.util.ConfigUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Jason Song(song_s@ctrip.com)
  */
 public class DefaultConfigFactory implements ConfigFactory {
+
   private static final Logger logger = LoggerFactory.getLogger(DefaultConfigFactory.class);
   private ConfigUtil m_configUtil;
 
@@ -35,11 +25,15 @@ public class DefaultConfigFactory implements ConfigFactory {
 
   @Override
   public Config create(String namespace) {
+
     ConfigFileFormat format = determineFileFormat(namespace);
+
     if (ConfigFileFormat.isPropertiesCompatible(format)) {
       return new DefaultConfig(namespace, createPropertiesCompatibleFileConfigRepository(namespace, format));
     }
+
     return new DefaultConfig(namespace, createLocalConfigRepository(namespace));
+
   }
 
   @Override
@@ -64,12 +58,14 @@ public class DefaultConfigFactory implements ConfigFactory {
   }
 
   LocalFileConfigRepository createLocalConfigRepository(String namespace) {
+    // 本地模式，使用 LocalFileConfigRepository 对象
     if (m_configUtil.isInLocalMode()) {
       logger.warn(
           "==== Apollo is in local mode! Won't pull configs from remote server for namespace {} ! ====",
           namespace);
       return new LocalFileConfigRepository(namespace);
     }
+    // 非本地模式，使用 LocalFileConfigRepository + RemoteConfigRepository 对象
     return new LocalFileConfigRepository(namespace, createRemoteConfigRepository(namespace));
   }
 
@@ -79,6 +75,7 @@ public class DefaultConfigFactory implements ConfigFactory {
 
   PropertiesCompatibleFileConfigRepository createPropertiesCompatibleFileConfigRepository(String namespace,
       ConfigFileFormat format) {
+
     String actualNamespaceName = trimNamespaceFormat(namespace, format);
     PropertiesCompatibleConfigFile configFile = (PropertiesCompatibleConfigFile) ConfigService
         .getConfigFile(actualNamespaceName, format);
@@ -86,7 +83,13 @@ public class DefaultConfigFactory implements ConfigFactory {
     return new PropertiesCompatibleFileConfigRepository(configFile);
   }
 
-  // for namespaces whose format are not properties, the file extension must be present, e.g. application.yaml
+  /**
+   * for namespaces whose format are not properties, the file extension must be present, e.g. application.yaml
+   * 判断是什么格式的config
+   *
+   * @param namespaceName
+   * @return
+   */
   ConfigFileFormat determineFileFormat(String namespaceName) {
     String lowerCase = namespaceName.toLowerCase();
     for (ConfigFileFormat format : ConfigFileFormat.values()) {

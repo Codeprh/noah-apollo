@@ -8,6 +8,7 @@ import com.ctrip.framework.apollo.util.parser.Parsers;
 import com.google.common.base.Function;
 
 /**
+ * String类型转换器
  * @author Jason Song(song_s@ctrip.com)
  */
 public interface Functions {

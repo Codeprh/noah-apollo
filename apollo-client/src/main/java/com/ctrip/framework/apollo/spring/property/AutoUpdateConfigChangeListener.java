@@ -20,6 +20,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.util.CollectionUtils;
 
 /**
+ * 客户端自动刷新监听器
  * Create by zhangzheng on 2018/3/6
  */
 public class AutoUpdateConfigChangeListener implements ConfigChangeListener{

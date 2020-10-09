@@ -9,8 +9,17 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 public class ServiceBootstrap {
+
+  /**
+   * 基于 JDK SPI 机制，加载指定服务的首个对象
+   * @param clazz
+   * @param <S>
+   * @return
+   */
   public static <S> S loadFirst(Class<S> clazz) {
+
     Iterator<S> iterator = loadAll(clazz);
+
     if (!iterator.hasNext()) {
       throw new IllegalStateException(String.format(
           "No implementation defined in /META-INF/services/%s, please check whether the file exists and has the right implementation class!",
@@ -20,6 +29,7 @@ public class ServiceBootstrap {
   }
 
   public static <S> Iterator<S> loadAll(Class<S> clazz) {
+    //在 META-INF/services/com.ctrip.framework.apollo.internals.Injector 中，配置 Injector 的实现类为 DefaultInjector
     ServiceLoader<S> loader = ServiceLoader.load(clazz);
 
     return loader.iterator();

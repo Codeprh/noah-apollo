@@ -8,16 +8,30 @@ import com.ctrip.framework.apollo.spi.ConfigFactory;
 import com.ctrip.framework.apollo.spi.ConfigRegistry;
 
 /**
+ * 客户端配置服务，作为配置使用的入口。
+ * apollo的配置，在客户端有两种方式展示：Config和ConfigFile接口
  * Entry point for client config use
  *
  * @author Jason Song(song_s@ctrip.com)
  */
 public class ConfigService {
+
+  /**
+   * 单例
+   */
   private static final ConfigService s_instance = new ConfigService();
 
+  /**
+   * ConfigManager 是 Config 的管理器
+   */
   private volatile ConfigManager m_configManager;
   private volatile ConfigRegistry m_configRegistry;
 
+  /**
+   * 双重检查锁获取对象属性
+   *
+   * @return
+   */
   private ConfigManager getManager() {
     if (m_configManager == null) {
       synchronized (this) {
@@ -70,6 +84,9 @@ public class ConfigService {
   }
 
   /**
+   * 按道理说，应该是将 Config 对象，设置到 ConfigManager 才对呀！这是笔者一开始的理解。
+   * 在 Apollo 的设计中，ConfigManager 不允许设置 Namespace 对应的 Config 对象，而是通过 ConfigFactory 统一创建，虽然此时的创建是假的，直接返回了 config 方法参数。
+   *
    * Manually set the config for the namespace specified, use with caution.
    *
    * @param namespace the namespace

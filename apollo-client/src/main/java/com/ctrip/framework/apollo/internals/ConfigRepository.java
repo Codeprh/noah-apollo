@@ -4,6 +4,7 @@ import com.ctrip.framework.apollo.enums.ConfigSourceType;
 import java.util.Properties;
 
 /**
+ * 那么什么是 ConfigRepository 是什么呢？这里我们可以简单( 但不完全准确 )理解成配置的 Repository ，负责从远程的 ConfigService 读取配置
  * @author Jason Song(song_s@ctrip.com)
  */
 public interface ConfigRepository {
